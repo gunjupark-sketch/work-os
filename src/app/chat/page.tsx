@@ -42,16 +42,22 @@ export default function ChatPage() {
         const chData = await chRes.json()
         const instData = await instRes.json()
 
+        // Parse channels
         if (Array.isArray(chData)) {
           setChannels(chData)
         } else if (chData.channels) {
           setChannels(chData.channels)
+        } else if (chData.text) {
+          setChannels(parseChannelsFromText(chData.text))
         }
 
+        // Parse instances
         if (Array.isArray(instData)) {
           setInstances(instData)
         } else if (instData.instances) {
           setInstances(instData.instances)
+        } else if (instData.text) {
+          setInstances(parseInstancesFromText(instData.text))
         }
       } catch (e) {
         console.error('Failed to fetch meta:', e)
@@ -209,8 +215,6 @@ export default function ChatPage() {
 /** Parse cross-claude text format into message objects */
 function parseMessagesFromText(text: string): ChatMessage[] {
   const messages: ChatMessage[] = []
-  // Pattern: #123 [type] sender (timestamp):
-  const regex = /^#(\d+)\s+\[(\w+)\]\s+(\S+)\s+\(([^)]+)\)(?:\s+\(reply to #(\d+)\))?/gm
   const blocks = text.split(/(?=^#\d+\s+\[)/m)
 
   for (const block of blocks) {
@@ -230,4 +234,41 @@ function parseMessagesFromText(text: string): ChatMessage[] {
   }
 
   return messages
+}
+
+/** Parse channels from text like "#general (218 msgs, last: ...)" */
+function parseChannelsFromText(text: string): Channel[] {
+  const channels: Channel[] = []
+  const regex = /#(\S+)\s+\((\d+)\s+msgs?,\s+last:\s+([^)]+)\)/g
+  let m
+  while ((m = regex.exec(text)) !== null) {
+    channels.push({
+      name: m[1],
+      message_count: parseInt(m[2]),
+      last_activity: m[3],
+    })
+  }
+  // Fallback: at least show general
+  if (channels.length === 0) {
+    channels.push({ name: 'general', message_count: 0, last_activity: '' })
+  }
+  return channels
+}
+
+/** Parse instances from text like "instance-id - description" */
+function parseInstancesFromText(text: string): Instance[] {
+  const instances: Instance[] = []
+  const lines = text.split('\n')
+  for (const line of lines) {
+    // Pattern: "  code-worker - description" or "  code-worker (online) - description"
+    const match = line.match(/^\s+(\S+?)(?:\s+\((\w+)\))?\s+-\s+(.*)/)
+    if (match) {
+      instances.push({
+        instance_id: match[1],
+        status: (match[2] as 'online' | 'offline') || 'online',
+        description: match[3]?.trim(),
+      })
+    }
+  }
+  return instances
 }
