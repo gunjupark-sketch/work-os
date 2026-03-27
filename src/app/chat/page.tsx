@@ -218,9 +218,12 @@ function parseMessagesFromText(text: string): ChatMessage[] {
   const blocks = text.split(/(?=^#\d+\s+\[)/m)
 
   for (const block of blocks) {
-    const match = block.match(/^#(\d+)\s+\[(\w+)\]\s+(\S+)\s+\(([^)]+)\)(?:\s+\(reply to #(\d+)\))?(?:\s+\[\d+ replies?\])?:\n?([\s\S]*)/)
+    const match = block.match(/^#(\d+)\s+\[(\w+)\]\s+(\S+)\s+\((.+?)\)(?:\s+\(reply to #(\d+)\))?(?:\s+\[\d+ replies?\])?:\n?([\s\S]*)/)
     if (match) {
-      const content = match[6]?.trim().replace(/\n---\s*$/, '').trim() || ''
+      const content = match[6]?.trim()
+        .replace(/\n---\s*$/, '')
+        .replace(/\nLast message ID:.*$/, '')
+        .trim() || ''
       messages.push({
         id: parseInt(match[1]),
         message_type: match[2] as ChatMessage['message_type'],
