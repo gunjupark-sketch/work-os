@@ -236,10 +236,10 @@ function parseMessagesFromText(text: string): ChatMessage[] {
   return messages
 }
 
-/** Parse channels from text like "#general (218 msgs, last: ...)" */
+/** Parse channels from text like "#general - Description (222 msgs, last: ...)" */
 function parseChannelsFromText(text: string): Channel[] {
   const channels: Channel[] = []
-  const regex = /#(\S+)\s+\((\d+)\s+msgs?,\s+last:\s+([^)]+)\)/g
+  const regex = /#(\S+)\s+-\s+[^(]*\((\d+)\s+msgs?,\s+last:\s+([^)]+)\)/g
   let m
   while ((m = regex.exec(text)) !== null) {
     channels.push({
@@ -248,25 +248,26 @@ function parseChannelsFromText(text: string): Channel[] {
       last_activity: m[3],
     })
   }
-  // Fallback: at least show general
   if (channels.length === 0) {
     channels.push({ name: 'general', message_count: 0, last_activity: '' })
   }
   return channels
 }
 
-/** Parse instances from text like "instance-id - description" */
+/** Parse instances from text like "code-worker-2 [online] - last seen: ... - description" */
 function parseInstancesFromText(text: string): Instance[] {
   const instances: Instance[] = []
   const lines = text.split('\n')
   for (const line of lines) {
-    // Pattern: "  code-worker - description" or "  code-worker (online) - description"
-    const match = line.match(/^\s+(\S+?)(?:\s+\((\w+)\))?\s+-\s+(.*)/)
+    const match = line.match(/^(\S+)\s+\[(\w+)\]\s+-\s+last seen:[^-]+-\s*(.*)/)
     if (match) {
+      // description may have multiple " - " segments, take the last part
+      const descParts = match[3].split(' - ')
+      const description = descParts[descParts.length - 1]?.trim() || match[3].trim()
       instances.push({
         instance_id: match[1],
-        status: (match[2] as 'online' | 'offline') || 'online',
-        description: match[3]?.trim(),
+        status: match[2] as 'online' | 'offline',
+        description,
       })
     }
   }
