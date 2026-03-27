@@ -20,7 +20,7 @@ export default function FeedbackPanel({ taskId }: Props) {
       .select("*")
       .eq("task_id", taskId)
       .order("created_at", { ascending: true });
-    setFeedbacks(data ?? []);
+    setFeedbacks((data ?? []) as Feedback[]);
   }
 
   useEffect(() => {
