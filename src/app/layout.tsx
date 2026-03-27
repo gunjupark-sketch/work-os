@@ -26,7 +26,10 @@ export default function RootLayout({
             <a href="/" className="text-lg font-bold tracking-tight">
               Work OS
             </a>
-            <span className="text-cream/60 text-sm">The Station</span>
+            <nav className="flex items-center gap-4 text-sm">
+              <a href="/chat" className="text-cream/80 hover:text-white transition-colors">채팅</a>
+              <span className="text-cream/60">The Station</span>
+            </nav>
           </div>
         </header>
         <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
